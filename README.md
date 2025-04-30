@@ -1,7 +1,7 @@
 # 📒 Simple Note-Taking Program (C++)
 
 A beginner-friendly, console-based **note-taking app** written in C++!
-It lets you add, view, delete, get statistics, and search through your notes — all stored as plain text files.
+It lets you add, view, delete, and get statistics — all stored as plain text files.
 
 ---
 
@@ -11,7 +11,6 @@ It lets you add, view, delete, get statistics, and search through your notes —
 - ✅ **View Notes** — Read your saved notes
 - ✅ **Delete Notes** — Clear out notes you no longer need
 - ✅ **Note Stats** — Get lines, words, characters count
-- ✅ **Search** — Find text across all notes
 - ✅ **Help** — See how the program works
 
 ---
