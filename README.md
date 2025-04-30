@@ -95,6 +95,7 @@ ShoppingList.txt
 ## 👨‍💻 Author
 - Made for educational purposes and practice with C++ file I/O and menus.
 - Feel free to fork and improve!
+- GitHub: surafel9
 
 ---
 
