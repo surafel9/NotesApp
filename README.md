@@ -1,4 +1,4 @@
-# Note-app-CLI-
+# Note-app-CLI(Comand Line Program)
 # 📒 Simple Note-Taking Program (C++)
 
 A beginner-friendly, console-based **note-taking app** written in C++!
