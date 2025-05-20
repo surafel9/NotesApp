@@ -240,7 +240,7 @@ string listNotes() {
             cout << "Invalid choice.\n";
         }
     }
-    // delete[] notes; // this causes an error when choosing the first note
+    // delete[] notes; // this causes an error when choosing the first note.
     return notes[choice - 1];
 }
 
