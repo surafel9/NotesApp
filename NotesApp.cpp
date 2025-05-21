@@ -82,14 +82,7 @@ void help() {
             "The takeNote function creates the notes as .txt files and accepts input including new line\ncharacters "
             "until it encounters the character '$' at which point it stops and that's the whole note.\n"
             "It also creates a NoteList.txt file in order to track the notes created so far.\n"
-            "The NoteList.txt is used to prevent overwriting a note (Even though it's in the PDF we did not use ios::noreplace"
-            "since it's a c++23 feature and we could not make it work on everyone's device.) "
             "The NoteList.txt is also choosing a note in the other functions.\n"
-            "Since we were told to avoid using things we didnt learn about. When deleting a note the .txt file IS NOT REMOVED!\n"
-            "Instead its contents are cleared and it is removed from the notes list.\n"
-            "This allows us to overwrite it if we want. In order to remove the specific note from "
-            "the notes list file:\nWe copy the whole thing into a second notes list file except that specific note name "
-            "and copy it back.\n"
 }
 
 void takeNote(Note *note) {
