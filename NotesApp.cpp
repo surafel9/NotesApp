@@ -1,35 +1,28 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <cstdio>
 
 using namespace std;
+
 struct Note {
     string title;
-    string path; 
+    string path;
+};
 
 void help();
-
 void takeNote(Note *note);
-
 void viewNote();
-
 void deleteNote();
-
 void noteStats();
-
 void searchIn();
-
 string listNotes();
-
-void searchFor(string &title, string &searchString);
-
-void switchText(string &from, string &to, string &title);
-
-bool nameTaken(string &name);
+void searchFor(const string &title, const string &searchString);
+bool nameTaken(const string &name);
 
 int main() {
     Note note;
-    fstream file;
     int choice;
     do {
         cout << "Make a choice:\n"
@@ -41,7 +34,12 @@ int main() {
              << "6: Help\n"
              << "7: Exit\n";
         cin >> choice;
-        cin.ignore();
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            choice = 0; 
+        }
+        cin.ignore(); 
         switch (choice) {
             case 1:
                 takeNote(&note);
@@ -62,13 +60,15 @@ int main() {
                 help();
                 break;
             case 7:
-                cout << "Exiting...";
+                cout << "Exiting...\n";
                 break;
             default:
                 cout << "Invalid choice!\n";
                 break;
         }
     } while (choice != 7);
+
+    return 0;
 }
 
 void help() {
@@ -77,55 +77,59 @@ void help() {
             "-------------------------------------------------------------------------------------------------------\n"
             "---------------- Description: ----------------\n"
             "This is a menu driven, modular note-taking program.\n"
-            "It can Add, View, Delete (sort of), Search through and also calculate note contents.\n"
+            "It can Add, View, Delete, Search through and also calculate note contents.\n"
             "---------------- How it works: ----------------\n"
             "The takeNote function creates the notes as .txt files and accepts input including new line\ncharacters "
-            "until it encounters the character '$' at which point it stops and that's the whole note.\n"
+            "until it encounters the character '$' on a new line at which point it stops and that's the whole note.\n"
             "It also creates a NoteList.txt file in order to track the notes created so far.\n"
-            "The NoteList.txt is also choosing a note in the other functions.\n"
+            "The NoteList.txt is also used for choosing a note in the other functions.\n"
+            "-------------------------------------------------------------------------------------------------------\n";
 }
 
 void takeNote(Note *note) {
     cout << "Enter the title of the note:\n";
     getline(cin, note->title);
     note->title += ".txt";
-    // note->path = "NoteFiles/" + note->title;
+    
     if (nameTaken(note->title)) {
-        cout << "Note name already taken.\nChoose another name.\n";
+        cout << "Note name already taken. Choose another name.\n";
         return;
     }
-    ofstream fout;
-    fout.open("NoteList.txt", ios::app);
-    if (!fout.is_open()) {
+
+    ofstream list_fout("NoteList.txt", ios::app);
+    if (!list_fout.is_open()) {
         cout << "Unable to open 'NoteList.txt' in takeNote\n";
     } else {
-        fout << note->title << '\n';
+        list_fout << note->title << '\n';
     }
-    fout.close();
-    cout << "Enter the note. End with a '$'\n";
-    fout.open(note->title, ios::out);
-    if (!fout.is_open()) {
+    list_fout.close();
+
+    cout << "Enter the note. End with a '$' on a new line.\n";
+    ofstream note_fout(note->title);
+    if (!note_fout.is_open()) {
         cout << "Unable to open " + note->title + " in takeNote\n";
         return;
     }
+
     string line;
-    getline(cin, line, '$');
-    fout << line << "\n";
-    fout.close();
+    while (getline(cin, line)) {
+        if (line == "$") {
+            break;
+        }
+        note_fout << line << "\n";
+    }
+    note_fout.close();
 }
 
-bool nameTaken(string &name) {
-    ifstream fin;
-    fin.open("NoteList.txt", ios::in);
+bool nameTaken(const string &name) {
+    ifstream fin("NoteList.txt");
     if (!fin.is_open()) {
         return false;
-    } else {
-        while (!fin.eof()) {
-            string line;
-            getline(fin, line);
-            if (line == name) {
-                return true;
-            }
+    }
+    string line;
+    while (getline(fin, line)) {
+        if (line == name) {
+            return true;
         }
     }
     return false;
@@ -133,210 +137,185 @@ bool nameTaken(string &name) {
 
 void viewNote() {
     string title = listNotes();
-    if (title == "") {
+    if (title.empty()) {
         return;
     }
+
     cout << "------------------------------------------------\n";
     cout << title << '\n';
     cout << "------------------------------------------------\n";
-    ifstream fin;
-    fin.open(title, ios::in);
+
+    ifstream fin(title);
     if (!fin.is_open()) {
         cout << "Unable to open '" + title + "' in viewNote.\n";
     } else {
-        while (!fin.eof()) {
-            string line;
-            getline(fin, line);
+        string line;
+        while (getline(fin, line)) {
             cout << line << "\n";
         }
     }
-    fin.close();
     cout << "------------------------------------------------\n";
 }
 
 void deleteNote() {
     string title = listNotes();
-    if (title == "") {
+    if (title.empty()) {
         return;
     }
-    ofstream fout;
-    fout.open(title, ios::out);
-    if (!fout.is_open()) {
-        cout << "Unable to clear " + title + "\n";
-    } else {
-        fout.close();
-    }
-    string path1 = "NoteList.txt";
-    string path2 = "NoteList2.txt";
-    switchText(path1, path2, title);
-    switchText(path2, path1, title);
-    cout << "File deleted (cleared) successfully.\n";
-}
 
-void switchText(string &from, string &to, string &title) {
-    ifstream fin;
-    fin.open(from, ios::in);
-    ofstream fout;
-    fout.open(to, ios::out);
-    if (!fin.is_open() || !fout.is_open()) {
-        cout << "Unable to open 'NoteList.txt' or 'NoteList2.txt' in deleteNote.\n";
-    } else {
-        while (!fin.eof()) {
-            string line;
-            getline(fin, line);
-            if (line == title) {
-                continue;
-            }
-            fout << line << "\n";
-        }
-        fout.close();
+    if (remove(title.c_str()) != 0) {
+        cout << "Error deleting note file: " << title << "\n";
     }
+
+    ifstream fin("NoteList.txt");
+    ofstream fout("NoteList.tmp");
+
+    if (!fin.is_open() || !fout.is_open()) {
+        cout << "Error opening note list files for modification.\n";
+        return;
+    }
+
+    string line;
+    while (getline(fin, line)) {
+        if (line != title) {
+            fout << line << '\n';
+        }
+    }
+
+    fin.close();
+    fout.close();
+
+    remove("NoteList.txt");
+    rename("NoteList.tmp", "NoteList.txt");
+
+    cout << "File '" << title << "' deleted successfully.\n";
 }
 
 string listNotes() {
-    ifstream fin;
-    fin.open("NoteList.txt", ios::in | ios::out);
-    int count = 0;
-    while (!fin.eof()) {
-        string line;
-        getline(fin, line);
-        if (line == "") {
-            continue;
-        }
-        count++;
-    }
-    string *notes = new string[count];
-    fin.clear();
-    fin.seekg(0, ios::beg);
-    int i = 0;
-    string line;
-    while (!fin.eof()) {
-        getline(fin, line);
-        if (line == "") {
-            continue;
-        }
-        notes[i] = line;
-        cout << i + 1 << ": " << notes[i] << "\n";
-        i++;
-    }
-    fin.close();
-    int choice = 0;
-    if (i == 0) {
-        cout << "No notes found\n";
+    ifstream fin("NoteList.txt");
+    if (!fin.is_open()) {
+        cout << "No notes found or 'NoteList.txt' is missing.\n";
         return "";
     }
-    while (choice < 1 || choice > count) {
+
+    vector<string> notes;
+    string line;
+    while (getline(fin, line)) {
+        if (!line.empty()) {
+            notes.push_back(line);
+        }
+    }
+    fin.close();
+
+    if (notes.empty()) {
+        cout << "No notes found.\n";
+        return "";
+    }
+
+    for (size_t i = 0; i < notes.size(); ++i) {
+        cout << i + 1 << ": " << notes[i] << "\n";
+    }
+
+    int choice = 0;
+    while (true) {
         cout << "Enter your choice number:\n";
         cin >> choice;
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Invalid input. Please enter a number.\n";
+            continue;
+        }
         cin.ignore();
-        if (choice < 1 || choice > count) {
+        if (choice >= 1 && choice <= static_cast<int>(notes.size())) {
+            break;
+        } else {
             cout << "Invalid choice.\n";
         }
     }
-    // delete[] notes; // this causes an error when choosing the first note.
     return notes[choice - 1];
 }
 
 void noteStats() {
-    string choice = listNotes();
-    if (choice == "") {
+    string title = listNotes();
+    if (title.empty()) {
         return;
     }
-    ifstream fin;
-    fin.open(choice, ios::in);
+
+    ifstream fin(title);
     if (!fin.is_open()) {
-        cout << "Unable to open '" << choice << "'\n";
-    } else {
-        int wordCount = 0;
-        int lineCount = 0;
-        int charCount = 0;
-        int totalChar = 0;
-        while (!fin.eof()) {
-            char c;
-            fin.get(c);
-            totalChar++;
-            if (c == '\n') {
-                lineCount++;
-            }
-            if (c == ' ' || c == '\n') {
+        cout << "Unable to open '" << title << "'\n";
+        return;
+    }
+
+    int wordCount = 0;
+    int lineCount = 0;
+    int charCount = 0;
+    
+    string line;
+    while(getline(fin, line)) {
+        lineCount++;
+        charCount += line.length();
+        
+        bool inWord = false;
+        for(char c : line) {
+            if (isspace(c)) {
+                inWord = false;
+            } else if (!inWord) {
                 wordCount++;
-            } else {
-                charCount++;
+                inWord = true;
             }
         }
-        cout << "------------------------------------------------\n";
-        cout << choice << '\n';
-        cout << "------------------------------------------------\n";
-        cout << "Lines: " << lineCount - 1 << '\n';
-        cout << "Words: " << wordCount - 1 << '\n';
-        cout << "Characters: " << charCount << '\n';
-        cout << "Total characters: " << totalChar << '\n';
-        cout << "------------------------------------------------\n";
     }
+
+    cout << "------------------------------------------------\n";
+    cout << title << '\n';
+    cout << "------------------------------------------------\n";
+    cout << "Lines: " << lineCount << '\n';
+    cout << "Words: " << wordCount << '\n';
+    cout << "Characters (no newlines): " << charCount << '\n';
+    cout << "------------------------------------------------\n";
 }
 
 void searchIn() {
     cout << "What are you searching for:\n";
     string searchString;
     getline(cin, searchString);
+
+    if (searchString.empty()) {
+        cout << "Search string cannot be empty.\n";
+        return;
+    }
+
     cout << "------------------------------------------------\n";
     cout << "Searching for '" << searchString << "'\n";
     cout << "------------------------------------------------\n";
-    ifstream fin;
-    fin.open("NoteList.txt", ios::in);
+
+    ifstream fin("NoteList.txt");
     if (!fin.is_open()) {
         cout << "Unable to open 'NoteList.txt' in searchIn.\n";
-    } else {
-        while (!fin.eof()) {
-            string line;
-            getline(fin, line);
-            searchFor(line, searchString);
-        }
-    }
-    cout << "------------------------------------------------\n";
-}
-
-void searchFor(string &title, string &searchString) {
-    if (title == "" || searchString == "") {
         return;
     }
-    bool foundResults = false;
-    ifstream fin;
-    fin.open(title, ios::in);
-    int lineNum = 1;
-    string found;
-    if (!fin.is_open()) {
-        cout << "Unable to open '" + title + "' in searchFor.\n";
-    } else {
-        while (!fin.eof()) {
-            char c;
-            fin.get(c);
-            if (c == '\n') {
-                lineNum++;
+
+    string title;
+    bool anyResult = false;
+    while (getline(fin, title)) {
+        if (title.empty()) continue;
+        
+        ifstream note_fin(title);
+        if (!note_fin.is_open()) continue;
+
+        string line;
+        int lineNum = 1;
+        while(getline(note_fin, line)) {
+            if (line.find(searchString) != string::npos) {
+                cout << "Found in '" << title << "' on line " << lineNum << ": " << line << '\n';
+                anyResult = true;
             }
-            if (c == searchString[0]) {
-                found += c;
-                for (int i = 1; i < searchString.length(); i++) {
-                    char c;
-                    fin.get(c);
-                    if (c == '\n') {
-                        lineNum++;
-                    }
-                    if (c == searchString[i]) {
-                        found += searchString[i];
-                    } else {
-                        found = "";
-                    }
-                }
-                if (found == searchString) {
-                    cout << "'" << found << "' found in '" << title << "' on line number: " << lineNum << '\n';
-                    foundResults = true;
-                }
-                found = "";
-            }
+            lineNum++;
         }
     }
-    if (!foundResults) {
-        cout << "No results\n";
+    if (!anyResult) {
+        cout << "No results found.\n";
     }
 }
